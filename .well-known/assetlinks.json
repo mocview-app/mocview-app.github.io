@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app_namespace",
+      "package_name": "com.mocview.app",
+      "sha256_cert_fingerprints": [
+        "F4:9A:75:BF:3C:67:B9:39:68:C1:30:12:4E:70:87:B1:FE:5A:74:AD:98:34:AA:9F:13:FA:19:A1:69:D3:51:D3"
+      ]
+    }
+  }
+]
