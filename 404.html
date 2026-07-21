@@ -1,53 +1,83 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOC VIEW</title>
-    <script>
-        // Redirect /vpx/* paths to the VPx landing page
-        if (window.location.pathname.startsWith('/vpx/')) {
-            window.location.replace('/vpx/');
-        }
-    </script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-        .container {
-            text-align: center;
-            padding: 40px;
-        }
-        .logo {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 24px;
-            position: relative;
-        }
-        .logo .outer { width: 100px; height: 100px; background: #000; border-radius: 50%; position: absolute; }
-        .logo .middle { width: 72px; height: 72px; background: #fff; border-radius: 50%; position: absolute; top: 14px; left: 14px; }
-        .logo .inner { width: 38px; height: 38px; background: #e63946; border-radius: 50%; position: absolute; top: 31px; left: 31px; }
-        h1 { font-size: 1.5rem; margin-bottom: 12px; }
-        p { color: rgba(255,255,255,0.8); font-size: 1rem; }
-        a { color: #4da6ff; }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MOCVIEW</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(120% 120% at 50% 0%, #1c2740 0%, #0e1524 60%, #0a0f1a 100%);
+    color: #e8ecf4;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    text-align: center; padding: 24px;
+  }
+  .wrap { max-width: 360px; width: 100%; }
+  .mark {
+    width: 76px; height: 76px; margin: 0 auto 22px;
+    border-radius: 50%; background: #0b0f18;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 5px #000, 0 8px 40px rgba(0,0,0,.5);
+  }
+  .mark span { width: 26px; height: 26px; border-radius: 50%; background: #e5372c; }
+  h1 { font-size: 20px; font-weight: 600; letter-spacing: .2px; margin-bottom: 8px; }
+  p { font-size: 14px; line-height: 1.5; color: #9aa6bd; margin-bottom: 22px; }
+  .cta {
+    display: inline-block; width: 100%;
+    background: #e5372c; color: #fff; text-decoration: none;
+    padding: 13px 18px; border-radius: 12px; font-weight: 600; font-size: 15px;
+  }
+  .cta:active { opacity: .85; }
+  .sub { margin-top: 16px; font-size: 13px; }
+  .sub a { color: #7aa2ff; text-decoration: none; }
+  .hide { display: none; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">
-            <div class="outer"></div>
-            <div class="middle"></div>
-            <div class="inner"></div>
-        </div>
-        <h1>Page Not Found</h1>
-        <p>Return to <a href="/">MOC VIEW</a></p>
+  <div class="wrap">
+    <div class="mark"><span></span></div>
+
+    <!-- Shared-VPx landing (shown when the path is /v/<code>) -->
+    <div id="vpx" class="hide">
+      <h1>Open this VPx in MOCVIEW</h1>
+      <p>MOCVIEW pitches play only inside the app — never as a downloadable file.
+         Tap below to watch.</p>
+      <a class="cta" id="openBtn" href="#">Open in the MOCVIEW app</a>
+      <p class="sub">Don’t have the app yet?
+         <a id="storeLink" href="https://apps.apple.com/app/mocview">Get MOCVIEW</a>
+      </p>
     </div>
+
+    <!-- Generic not-found (any other path) -->
+    <div id="nf" class="hide">
+      <h1>Page Not Found</h1>
+      <p class="sub">Return to <a href="/">MOC VIEW</a></p>
+    </div>
+  </div>
+
+<script>
+  // GitHub Pages serves this file for any unmatched path. If the path is a VPx
+  // share link (/v/<code>), turn it into the controlled entry point: try to open
+  // the native app via the mocview:// scheme, and offer a manual button + store
+  // fallback. Everything else shows the normal not-found.
+  (function () {
+    var path = location.pathname.replace(/\/+$/, '');
+    var m = path.match(/^\/v\/([A-Za-z0-9_-]+)$/);
+    if (m) {
+      var code = m[1];
+      var appUrl = 'mocview://v/' + code;
+      document.getElementById('vpx').classList.remove('hide');
+      var btn = document.getElementById('openBtn');
+      btn.setAttribute('href', appUrl);
+      // Best-effort auto-open on mobile (harmless on desktop — no scheme handler).
+      setTimeout(function () { window.location.href = appUrl; }, 350);
+    } else {
+      document.getElementById('nf').classList.remove('hide');
+    }
+  })();
+</script>
 </body>
 </html>
