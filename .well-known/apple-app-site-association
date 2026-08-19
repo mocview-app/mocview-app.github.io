@@ -4,7 +4,8 @@
       {
         "appIDs": ["J4V2LADZMP.com.mocview.app"],
         "components": [
-          { "/": "/v/*", "comment": "VPx share links open directly in the app" }
+          { "/": "/v/*", "comment": "VPx share links open directly in the app" },
+          { "/": "/i/*", "comment": "Per-person view invitations (access model 2a) open directly in the app" }
         ]
       }
     ]
