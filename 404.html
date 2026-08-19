@@ -51,6 +51,17 @@
       </p>
     </div>
 
+    <!-- Per-person invitation landing (shown when the path is /i/<code>) -->
+    <div id="invite" class="hide">
+      <h1>Open your invitation</h1>
+      <p>You&rsquo;ve been invited to view a MOCVIEW pitch. The invitation works
+         only for the address it was sent to.</p>
+      <a class="cta" id="inviteBtn" href="#">Open in the MOCVIEW app</a>
+      <p class="sub">Don&rsquo;t have the app yet?
+         <a href="https://apps.apple.com/app/mocview">Get MOCVIEW</a>
+      </p>
+    </div>
+
     <!-- Generic not-found (any other path) -->
     <div id="nf" class="hide">
       <h1>Page Not Found</h1>
@@ -64,19 +75,32 @@
   // the native app via the mocview:// scheme, and offer a manual button + store
   // fallback. Everything else shows the normal not-found.
   (function () {
+    // Two link kinds, deliberately distinct paths:
+    //   /v/<code>  one share link anyone may hold
+    //   /i/<code>  a per-person invitation, inert for anyone but the addressee
+    //
+    // ⚠ Adding a link kind to the APP is only half the job. Until this file and
+    // the AASA both know the path, iOS hands it to Safari and the recipient gets
+    // "Page Not Found" — which is exactly what shipped for /i/ on 2026-08-19.
+    // The deep-link contract spans the app AND this site; change them together.
+    var routes = [
+      { re: /^\/v\/([A-Za-z0-9_-]+)$/, scheme: 'mocview://v/', panel: 'vpx',    btn: 'openBtn'   },
+      { re: /^\/i\/([A-Za-z0-9_-]+)$/, scheme: 'mocview://i/', panel: 'invite', btn: 'inviteBtn' }
+    ];
     var path = location.pathname.replace(/\/+$/, '');
-    var m = path.match(/^\/v\/([A-Za-z0-9_-]+)$/);
-    if (m) {
-      var code = m[1];
-      var appUrl = 'mocview://v/' + code;
-      document.getElementById('vpx').classList.remove('hide');
-      var btn = document.getElementById('openBtn');
-      btn.setAttribute('href', appUrl);
+    var matched = false;
+    for (var i = 0; i < routes.length; i++) {
+      var m = path.match(routes[i].re);
+      if (!m) continue;
+      var appUrl = routes[i].scheme + m[1];
+      document.getElementById(routes[i].panel).classList.remove('hide');
+      document.getElementById(routes[i].btn).setAttribute('href', appUrl);
       // Best-effort auto-open on mobile (harmless on desktop — no scheme handler).
       setTimeout(function () { window.location.href = appUrl; }, 350);
-    } else {
-      document.getElementById('nf').classList.remove('hide');
+      matched = true;
+      break;
     }
+    if (!matched) document.getElementById('nf').classList.remove('hide');
   })();
 </script>
 </body>
