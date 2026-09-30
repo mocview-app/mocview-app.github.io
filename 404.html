@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
 <title>MOCVIEW</title>
 <style>
   :root { color-scheme: dark; }
@@ -13,7 +14,7 @@
     background: radial-gradient(120% 120% at 50% 0%, #1c2740 0%, #0e1524 60%, #0a0f1a 100%);
     color: #e8ecf4;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    text-align: center; padding: 24px;
+    text-align: center; padding: 24px 16px;
   }
   .wrap { max-width: 360px; width: 100%; }
   .mark {
@@ -26,29 +27,117 @@
   h1 { font-size: 20px; font-weight: 600; letter-spacing: .2px; margin-bottom: 8px; }
   p { font-size: 14px; line-height: 1.5; color: #9aa6bd; margin-bottom: 22px; }
   .cta {
-    display: inline-block; width: 100%;
+    display: inline-block; width: 100%; border: 0; cursor: pointer;
     background: #e5372c; color: #fff; text-decoration: none;
     padding: 13px 18px; border-radius: 12px; font-weight: 600; font-size: 15px;
   }
   .cta:active { opacity: .85; }
   .sub { margin-top: 16px; font-size: 13px; }
   .sub a { color: #7aa2ff; text-decoration: none; }
-  .hide { display: none; }
+  .hide { display: none !important; }
+
+  /* ---- Public VPx web player (S9 O-8, ADD-1 §3) ---- */
+  #player { max-width: 420px; }
+  .stage {
+    position: relative; width: 100%;
+    /* 9:16, capped so the whole frame fits a landscape screen */
+    aspect-ratio: 9 / 16; max-height: 78vh; margin: 0 auto 18px;
+    max-width: calc(78vh * 9 / 16);
+    border-radius: 14px; overflow: hidden; background: #000;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  }
+  .stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  /* Everything drawn over the video ignores taps, so play/pause keeps working. */
+  .overlay { position: absolute; inset: 0; pointer-events: none; }
+  .designation {
+    position: absolute; top: 12px; left: 12px;
+    display: flex; align-items: center; gap: 7px;
+    padding: 6px 10px 6px 7px; border-radius: 999px;
+    background: rgba(8, 12, 20, .62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    font-size: 12px; font-weight: 600; letter-spacing: .2px; color: #fff;
+  }
+  .designation i {
+    width: 16px; height: 16px; border-radius: 50%; background: #0b0f18;
+    box-shadow: 0 0 0 1.5px #000; display: flex; align-items: center; justify-content: center;
+  }
+  .designation i::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #e5372c; }
+  /* FR-54, as the app draws it: three lines, drifting diagonally over 26 s,
+     so a clip of any real length cannot avoid it and cropping a band cannot
+     remove it. */
+  .wm {
+    position: absolute; text-align: left;
+    font-size: 11px; line-height: 1.25; color: rgba(255,255,255,.62);
+    text-shadow: 0 0 3px rgba(0,0,0,.8), 0 0 8px rgba(0,0,0,.4);
+    animation: drift 26s ease-in-out infinite alternate;
+    white-space: nowrap;
+  }
+  .wm b { color: rgba(255,255,255,.78); font-weight: 600; letter-spacing: .3px; }
+  @keyframes drift {
+    from { left: 22.5%; top: 19%; transform: translate(-22.5%, -19%); }
+    to   { left: 77.5%; top: 81%; transform: translate(-77.5%, -81%); }
+  }
+  .playbtn {
+    position: absolute; inset: 0; margin: auto; width: 72px; height: 72px;
+    border-radius: 50%; background: rgba(8,12,20,.55); pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .playbtn::after {
+    content: ""; margin-left: 6px;
+    border-left: 22px solid #fff; border-top: 14px solid transparent; border-bottom: 14px solid transparent;
+  }
+  .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.18); }
+  .bar div { height: 100%; width: 0; background: #e5372c; }
+  .loading { font-size: 14px; color: #9aa6bd; }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="mark"><span></span></div>
+    <div class="mark" id="topMark"><span></span></div>
 
-    <!-- Shared-VPx landing (shown when the path is /v/<code>) -->
+    <!-- Checking a /v/ link before choosing player or neutral page -->
+    <p id="loading" class="loading hide">Opening…</p>
+
+    <!-- Public VPx: plays here, no account, no app (S9 O-8) -->
+    <div id="player" class="hide">
+      <div class="stage" id="stage">
+        <video id="video" playsinline webkit-playsinline preload="metadata"
+               disablepictureinpicture disableremoteplayback
+               controlslist="nodownload nofullscreen noremoteplayback"></video>
+        <div class="overlay">
+          <div class="designation"><i></i>Authorized for public viewing</div>
+          <div class="wm">
+            <b>&#10003; MOCVIEW Verified</b><br />
+            Viewed without sign-in<br />
+            <span id="wmStamp"></span>
+          </div>
+          <div class="playbtn" id="playBtn"></div>
+          <div class="bar"><div id="progress"></div></div>
+        </div>
+      </div>
+      <div id="appOffer">
+        <p>See the full VPx in the MOCVIEW app, in 360° and with the documents the owner has shared.</p>
+        <a class="cta hide" id="playerOpenBtn" href="#">Open in the MOCVIEW app</a>
+        <p class="sub" id="playerGet">Don&rsquo;t have the app yet?
+           <a href="https://apps.apple.com/app/mocview">Get MOCVIEW</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Any /v/ link that is not a live, Public VPx: one neutral page for all -->
     <div id="vpx" class="hide">
       <h1>Open this VPx in MOCVIEW</h1>
-      <p>MOCVIEW pitches play only inside the app — never as a downloadable file.
-         Tap below to watch.</p>
+      <p>Watch this VPx in the MOCVIEW app.</p>
       <a class="cta" id="openBtn" href="#">Open in the MOCVIEW app</a>
-      <p class="sub">Don’t have the app yet?
+      <p class="sub">Don&rsquo;t have the app yet?
          <a id="storeLink" href="https://apps.apple.com/app/mocview">Get MOCVIEW</a>
       </p>
+    </div>
+
+    <!-- The server could not be reached; says nothing about the VPx -->
+    <div id="offline" class="hide">
+      <h1>Couldn&rsquo;t reach MOCVIEW</h1>
+      <p>Check your connection, then try again.</p>
+      <button class="cta" id="retryBtn" type="button">Try again</button>
     </div>
 
     <!-- Per-person invitation landing (shown when the path is /i/<code>) -->
@@ -70,37 +159,165 @@
   </div>
 
 <script>
-  // GitHub Pages serves this file for any unmatched path. If the path is a VPx
-  // share link (/v/<code>), turn it into the controlled entry point: try to open
-  // the native app via the mocview:// scheme, and offer a manual button + store
-  // fallback. Everything else shows the normal not-found.
+  // GitHub Pages serves this file for any unmatched path, which makes it the
+  // router for share links opened WITHOUT the app. With the app installed, iOS
+  // opens the app from the universal link before this page is ever requested
+  // (the AASA claims /v/* and /i/*), so nothing here can change app routing.
+  //
+  //   /v/<code>  one share link anyone may hold. A live link to an active,
+  //              PUBLIC VPx plays here (S9 O-8, ADD-1 §3). Anything else gets
+  //              the same neutral "open in the app" page; the server answers
+  //              every other case identically, so this page cannot tell a
+  //              private VPx from one that never existed, and neither can you.
+  //   /i/<code>  a per-person invitation, inert for anyone but the addressee
+  //
+  // ⚠ Adding a link kind to the APP is only half the job. Until this file and
+  // the AASA both know the path, iOS hands it to Safari and the recipient gets
+  // "Page Not Found", which is exactly what shipped for /i/ on 2026-08-19.
+  // The deep-link contract spans the app AND this site; change them together.
+  //
+  // ⚠ What the marking is, and is not. The watermark and the designation are
+  // DRAWN BY THIS PAGE over the video; the video file itself is unmarked (the
+  // app does the same). A screenshot or screen recording carries both. Someone
+  // who edits the page (browser devtools) can remove them, and can copy the
+  // short-lived video URL while it lasts (5 minutes). A mark that survives
+  // that needs burned-in video processing, the named follow-on (ADD-1 §4).
   (function () {
-    // Two link kinds, deliberately distinct paths:
-    //   /v/<code>  one share link anyone may hold
-    //   /i/<code>  a per-person invitation, inert for anyone but the addressee
-    //
-    // ⚠ Adding a link kind to the APP is only half the job. Until this file and
-    // the AASA both know the path, iOS hands it to Safari and the recipient gets
-    // "Page Not Found" — which is exactly what shipped for /i/ on 2026-08-19.
-    // The deep-link contract spans the app AND this site; change them together.
+    var FN = 'https://ubaabipoesgnljuganzk.supabase.co/functions/v1/public-vpx-web';
+    var ua = navigator.userAgent || '';
+    var isAndroid = /Android/i.test(ua);
+    // iPadOS reports as a Mac; the touch check tells them apart.
+    var isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+
+    function show(id) { document.getElementById(id).classList.remove('hide'); }
+    function hide(id) { document.getElementById(id).classList.add('hide'); }
+
     var routes = [
-      { re: /^\/v\/([A-Za-z0-9_-]+)$/, scheme: 'mocview://v/', panel: 'vpx',    btn: 'openBtn'   },
-      { re: /^\/i\/([A-Za-z0-9_-]+)$/, scheme: 'mocview://i/', panel: 'invite', btn: 'inviteBtn' }
+      { re: /^\/v\/([A-Za-z0-9_-]+)$/, kind: 'vpx' },
+      { re: /^\/i\/([A-Za-z0-9_-]+)$/, kind: 'invite' }
     ];
     var path = location.pathname.replace(/\/+$/, '');
-    var matched = false;
+    var route = null, code = null;
     for (var i = 0; i < routes.length; i++) {
       var m = path.match(routes[i].re);
-      if (!m) continue;
-      var appUrl = routes[i].scheme + m[1];
-      document.getElementById(routes[i].panel).classList.remove('hide');
-      document.getElementById(routes[i].btn).setAttribute('href', appUrl);
-      // Best-effort auto-open on mobile (harmless on desktop — no scheme handler).
-      setTimeout(function () { window.location.href = appUrl; }, 350);
-      matched = true;
-      break;
+      if (m) { route = routes[i]; code = m[1]; break; }
     }
-    if (!matched) document.getElementById('nf').classList.remove('hide');
+
+    // Try the app via its scheme, as this page always has. Only on the
+    // neutral and invitation pages: on the player it would interrupt a video
+    // the person is already watching.
+    function tryApp(appUrl) {
+      setTimeout(function () { window.location.href = appUrl; }, 350);
+    }
+
+    if (!route) { show('nf'); return; }
+
+    if (route.kind === 'invite') {
+      var inviteUrl = 'mocview://i/' + code;
+      document.getElementById('inviteBtn').setAttribute('href', inviteUrl);
+      show('invite');
+      tryApp(inviteUrl);
+      return;
+    }
+
+    var appUrl = 'mocview://v/' + code;
+    document.getElementById('openBtn').setAttribute('href', appUrl);
+
+    function neutral() {
+      hide('loading'); hide('offline'); hide('player');
+      document.getElementById('topMark').classList.remove('hide');
+      show('vpx');
+      tryApp(appUrl);
+    }
+
+    // Ask the server. Resolves to the playable answer, or null for "not here".
+    // Rejects only when MOCVIEW could not be reached at all.
+    function ask() {
+      return fetch(FN, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code: code }),
+        cache: 'no-store'
+      }).then(function (r) {
+        if (!r.ok) throw new Error('status ' + r.status);
+        return r.json();
+      }).then(function (d) { return d && d.playable ? d : null; });
+    }
+
+    var video = document.getElementById('video');
+    var stage = document.getElementById('stage');
+    var playBtn = document.getElementById('playBtn');
+    var progress = document.getElementById('progress');
+    var current = null;
+
+    function stamp() {
+      var t = new Date();
+      function two(v) { return (v < 10 ? '0' : '') + v; }
+      var id = current ? current.vpxId.slice(0, 8) : '';
+      document.getElementById('wmStamp').textContent =
+        t.getFullYear() + '-' + two(t.getMonth() + 1) + '-' + two(t.getDate()) + ' ' +
+        two(t.getHours()) + ':' + two(t.getMinutes()) + ' · ' + id;
+    }
+
+    function play(d) {
+      current = d;
+      hide('loading'); hide('offline');
+      document.getElementById('topMark').classList.add('hide');
+      if (d.thumbnailUrl) video.setAttribute('poster', d.thumbnailUrl);
+      video.src = d.videoUrl;
+      stamp();
+      setInterval(stamp, 15000);
+      // The app is offered, never required. There is no Android app yet, so
+      // Android is offered nothing rather than an iPhone store link.
+      if (isAndroid) hide('appOffer');
+      if (isIOS) {
+        var b = document.getElementById('playerOpenBtn');
+        b.setAttribute('href', appUrl);
+        b.classList.remove('hide');
+      }
+      show('player');
+    }
+
+    stage.addEventListener('click', function () {
+      if (video.paused || video.ended) { video.play(); } else { video.pause(); }
+    });
+    stage.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    video.addEventListener('play', function () { playBtn.classList.add('hide'); });
+    video.addEventListener('pause', function () { playBtn.classList.remove('hide'); });
+    video.addEventListener('ended', function () { playBtn.classList.remove('hide'); });
+    video.addEventListener('timeupdate', function () {
+      if (video.duration) progress.style.width = (100 * video.currentTime / video.duration) + '%';
+    });
+
+    // The video URL lasts 5 minutes. When it runs out (a replay after a long
+    // pause), ask again: each answer re-checks the VPx, so one taken offline
+    // stops playing here instead of living on in an open tab.
+    var reasking = false;
+    video.addEventListener('error', function () {
+      if (reasking || !current) return;
+      reasking = true;
+      var at = video.currentTime || 0;
+      var wasPlaying = !video.paused;
+      ask().then(function (d) {
+        reasking = false;
+        if (!d) { neutral(); return; }
+        current = d;
+        video.src = d.videoUrl;
+        video.addEventListener('loadedmetadata', function once() {
+          video.removeEventListener('loadedmetadata', once);
+          try { video.currentTime = at; } catch (e) {}
+          if (wasPlaying) video.play();
+        });
+      }, function () { reasking = false; });
+    });
+
+    function start() {
+      hide('offline'); show('loading');
+      ask().then(function (d) { d ? play(d) : neutral(); },
+                 function () { hide('loading'); show('offline'); });
+    }
+    document.getElementById('retryBtn').addEventListener('click', start);
+    start();
   })();
 </script>
 </body>
