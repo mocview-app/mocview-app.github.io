@@ -173,6 +173,16 @@
       <a class="cta" id="liveBtn" href="#">Open in the MOCVIEW app</a>
     </div>
 
+    <!-- Declining a Live interview invitation (shown when the path is
+         /decline/<interview>/<token>). Never opens the app: the person may be
+         reading email where the app isn't installed. Nothing is declined until
+         the button is pressed, so a mail scanner following the link does nothing. -->
+    <div id="decline" class="hide">
+      <h1 id="declineTitle">Can&rsquo;t make it?</h1>
+      <p id="declineText">Decline this live interview invitation. The person who invited you will be told.</p>
+      <a class="cta" id="declineBtn" href="#" role="button">Decline the invitation</a>
+    </div>
+
     <!-- Generic not-found (any other path) -->
     <div id="nf" class="hide">
       <h1>Page Not Found</h1>
@@ -218,13 +228,14 @@
       { re: /^\/v\/([A-Za-z0-9_-]+)$/, kind: 'vpx' },
       { re: /^\/i\/([A-Za-z0-9_-]+)$/, kind: 'invite' },
       { re: /^\/(feedback)$/, kind: 'feedback' },
-      { re: /^\/live\/([A-Za-z0-9-]+)$/, kind: 'live' }
+      { re: /^\/live\/([A-Za-z0-9-]+)$/, kind: 'live' },
+      { re: /^\/decline\/([0-9a-fA-F-]{36})\/([0-9a-fA-F]{64})$/, kind: 'decline' }
     ];
     var path = location.pathname.replace(/\/+$/, '');
     var route = null, code = null;
     for (var i = 0; i < routes.length; i++) {
       var m = path.match(routes[i].re);
-      if (m) { route = routes[i]; code = m[1]; break; }
+      if (m) { route = routes[i]; code = m[1]; var code2 = m[2]; break; }
     }
 
     // Try the app via its scheme, as this page always has. Only on the
@@ -235,6 +246,42 @@
     }
 
     if (!route) { show('nf'); return; }
+
+    if (route.kind === 'decline') {
+      var DECLINE = 'https://ubaabipoesgnljuganzk.supabase.co/functions/v1/live-decline';
+      var title = document.getElementById('declineTitle');
+      var text = document.getElementById('declineText');
+      var btn = document.getElementById('declineBtn');
+      var sending = false;
+      function done(h, p) { title.textContent = h; text.textContent = p; btn.classList.add('hide'); }
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (sending) return;
+        sending = true;
+        btn.textContent = 'Declining\u2026';
+        fetch(DECLINE, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ sessionId: code, token: code2 })
+        }).then(function (r) { return r.json(); }).then(function (r) {
+          if (r.status === 'declined' || r.status === 'already') {
+            done('You\u2019ve declined', 'Thanks for letting them know. You can close this page.');
+          } else if (r.status === 'closed' || r.status === 'none') {
+            done('This invitation is no longer open', 'The interview has already started, ended or been cancelled.');
+          } else {
+            sending = false;
+            btn.textContent = 'Decline the invitation';
+            text.textContent = 'That didn\u2019t go through. Check your connection and try again.';
+          }
+        }).catch(function () {
+          sending = false;
+          btn.textContent = 'Decline the invitation';
+          text.textContent = 'That didn\u2019t go through. Check your connection and try again.';
+        });
+      });
+      show('decline');
+      return;
+    }
 
     if (route.kind === 'live') {
       var liveUrl = 'mocview://live/' + code;
