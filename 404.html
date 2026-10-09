@@ -69,16 +69,10 @@
     box-shadow: 0 0 0 1.5px #000; display: flex; align-items: center; justify-content: center;
   }
   .designation i::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #e5372c; }
-  /* FR-54, as the app draws it on a Public VPx: three lines, held still at the
-     bottom right, clear of the designation and just above the progress bar (PO, 9 Oct 2026: the drifting mark was
-     distracting, and this player only ever shows VPx their owners made Public). */
-  .wm {
-    position: absolute; right: 12px; bottom: 16px; text-align: right;
-    font-size: 11px; line-height: 1.25; color: rgba(255,255,255,.62);
-    text-shadow: 0 0 3px rgba(0,0,0,.8), 0 0 8px rgba(0,0,0,.4);
-    white-space: nowrap;
-  }
-  .wm b { color: rgba(255,255,255,.78); font-weight: 600; letter-spacing: .3px; }
+  /* FR-54 as amended 9 Oct 2026, as the app draws it: the MOCVIEW wordmark at
+     the top right, and nothing about the viewer. Who watched is recorded for
+     the owner; it is not written over the video. */
+  .wm { position: absolute; right: 12px; top: 16px; width: 80px; height: auto; opacity: .85; }
   .playbtn {
     position: absolute; inset: 0; margin: auto; width: 72px; height: 72px;
     border-radius: 50%; background: rgba(8,12,20,.55); pointer-events: none;
@@ -108,11 +102,7 @@
                controlslist="nodownload nofullscreen noremoteplayback"></video>
         <div class="overlay">
           <div class="designation"><i></i>Authorized for public viewing</div>
-          <div class="wm">
-            <b>&#10003; MOCVIEW Verified</b><br />
-            Viewed without sign-in<br />
-            <span id="wmStamp"></span>
-          </div>
+          <svg class="wm" role="img" aria-label="MOCVIEW" xmlns="http://www.w3.org/2000/svg" viewBox="118 268 560 76"><path fill="#FFFFFF" d="M616.17,335.3h2.93l15.49-47.22l15.49,47.22H653l15.57-58.6h-4.1l-13.31,50.48l-14.98-47.21h-3.01l-15.24,47.21&#xA;&#x9;&#x9;l-13.14-50.48h-4.19L616.17,335.3z M536.22,335.3h29.89v-4.02h-25.87v-24.7h25.11v-4.02h-25.11v-21.85h25.87v-4.02h-29.89V335.3z&#xA;&#x9;&#x9; M492.61,276.7h-4.02v58.6h4.02V276.7z M424.3,335.3h2.68l23.61-58.6h-4.44l-20.51,51.57l-20.43-51.57h-4.44L424.3,335.3z&#xA;&#x9;&#x9; M359.5,295.28l8.79-8.79c-5.52-6.53-13.98-10.63-23.69-10.63c-17.41,0-31.06,13.06-31.06,30.22c0,16.99,13.39,30.05,30.89,30.05&#xA;&#x9;&#x9;c11.05,0,20.09-5.11,25.7-12.39l-9.38-8.2c-3.27,4.86-8.96,8.46-16.24,8.46c-10.72,0-18.58-7.7-18.58-17.91&#xA;&#x9;&#x9;c0-10.38,8.04-18.08,18.67-18.08C351.05,288,356.24,290.85,359.5,295.28 M251.68,324c-10.55,0-18.42-7.7-18.42-18&#xA;&#x9;&#x9;c0-10.3,8.04-18,18.75-18c10.38,0,18.08,7.7,18.08,18C270.09,316.3,262.23,324,251.68,324 M251.68,336.14&#xA;&#x9;&#x9;c17.41,0,30.81-13.14,30.81-30.14c0-16.99-13.23-30.14-30.47-30.14c-17.5,0-31.14,13.06-31.14,30.14&#xA;&#x9;&#x9;C220.87,323.08,234.26,336.14,251.68,336.14 M169.22,276.7l-14.98,39.43l-15.07-39.43h-15.74v58.6h11.89v-41.52l13.48,36.5h10.8&#xA;&#x9;&#x9;l13.48-36.67v41.69h11.89v-58.6H169.22z"></path><path fill="#D2232A" d="M251.68,319.13c7.27,0,13.17-5.9,13.17-13.17c0-7.28-5.9-13.17-13.17-13.17c-7.28,0-13.17,5.9-13.17,13.17&#xA;&#x9;&#x9;C238.51,313.23,244.41,319.13,251.68,319.13"></path></svg>
           <div class="playbtn" id="playBtn"></div>
           <div class="bar"><div id="progress"></div></div>
         </div>
@@ -330,14 +320,6 @@
     var progress = document.getElementById('progress');
     var current = null;
 
-    function stamp() {
-      var t = new Date();
-      function two(v) { return (v < 10 ? '0' : '') + v; }
-      var id = current ? current.vpxId.slice(0, 8) : '';
-      document.getElementById('wmStamp').textContent =
-        t.getFullYear() + '-' + two(t.getMonth() + 1) + '-' + two(t.getDate()) + ' ' +
-        two(t.getHours()) + ':' + two(t.getMinutes()) + ' · ' + id;
-    }
 
     function play(d) {
       current = d;
@@ -345,8 +327,6 @@
       document.getElementById('topMark').classList.add('hide');
       if (d.thumbnailUrl) video.setAttribute('poster', d.thumbnailUrl);
       video.src = d.videoUrl;
-      stamp();
-      setInterval(stamp, 15000);
       // The app is offered, never required. There is no Android app yet, so
       // Android is offered nothing rather than an iPhone store link.
       if (isAndroid) hide('appOffer');
