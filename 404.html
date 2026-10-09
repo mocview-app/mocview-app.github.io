@@ -154,8 +154,12 @@
     <!-- An invitation to a Live interview (shown when the path is /live/<id>) -->
     <div id="live" class="hide">
       <h1>You&rsquo;re invited to a live interview</h1>
-      <p>It opens in the MOCVIEW app.</p>
+      <p id="liveText">It opens in the MOCVIEW app.</p>
       <a class="cta" id="liveBtn" href="#">Open in the MOCVIEW app</a>
+      <!-- On a computer: the interview runs in the app on an iPhone, so the
+           page hands the invitation to the phone instead of offering a button
+           that cannot work here. -->
+      <div id="liveQr" class="hide" style="margin:20px auto 0;padding:12px;background:#fff;border-radius:12px;width:192px;height:192px"></div>
     </div>
 
     <!-- Declining a Live interview invitation (shown when the path is
@@ -272,7 +276,23 @@
       var liveUrl = 'mocview://live/' + code;
       document.getElementById('liveBtn').setAttribute('href', liveUrl);
       show('live');
-      tryApp(liveUrl);
+      if (isIOS || isAndroid) { tryApp(liveUrl); return; }
+      document.getElementById('liveText').textContent =
+        'Live interviews run in the MOCVIEW app on iPhone. Point your iPhone camera at this code to open your invitation there.';
+      hide('liveBtn');
+      var lib = document.createElement('script');
+      lib.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+      lib.integrity = 'sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1';
+      lib.crossOrigin = 'anonymous';
+      lib.onload = function () {
+        var qr = qrcode(0, 'M');
+        qr.addData('https://mocview.app/live/' + code);
+        qr.make();
+        var box = document.getElementById('liveQr');
+        box.innerHTML = qr.createSvgTag({ scalable: true, margin: 0 });
+        show('liveQr');
+      };
+      document.head.appendChild(lib);
       return;
     }
 
