@@ -69,21 +69,16 @@
     box-shadow: 0 0 0 1.5px #000; display: flex; align-items: center; justify-content: center;
   }
   .designation i::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #e5372c; }
-  /* FR-54, as the app draws it: three lines, drifting diagonally over 26 s,
-     so a clip of any real length cannot avoid it and cropping a band cannot
-     remove it. */
+  /* FR-54, as the app draws it on a Public VPx: three lines, held still at the
+     bottom right, clear of the designation and just above the progress bar (PO, 9 Oct 2026: the drifting mark was
+     distracting, and this player only ever shows VPx their owners made Public). */
   .wm {
-    position: absolute; text-align: left;
+    position: absolute; right: 12px; bottom: 16px; text-align: right;
     font-size: 11px; line-height: 1.25; color: rgba(255,255,255,.62);
     text-shadow: 0 0 3px rgba(0,0,0,.8), 0 0 8px rgba(0,0,0,.4);
-    animation: drift 26s ease-in-out infinite alternate;
     white-space: nowrap;
   }
   .wm b { color: rgba(255,255,255,.78); font-weight: 600; letter-spacing: .3px; }
-  @keyframes drift {
-    from { left: 22.5%; top: 19%; transform: translate(-22.5%, -19%); }
-    to   { left: 77.5%; top: 81%; transform: translate(-77.5%, -81%); }
-  }
   .playbtn {
     position: absolute; inset: 0; margin: auto; width: 72px; height: 72px;
     border-radius: 50%; background: rgba(8,12,20,.55); pointer-events: none;
