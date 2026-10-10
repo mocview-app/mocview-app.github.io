@@ -40,6 +40,16 @@
     padding: 13px 18px; border-radius: 12px; font-weight: 600; font-size: 15px;
   }
   .cta:active { opacity: .85; }
+  .field { text-align: left; margin-bottom: 16px; }
+  .field label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .field label em { font-style: normal; font-weight: 400; color: #9aa6bd; }
+  .field textarea, .field input {
+    width: 100%; box-sizing: border-box; background: #0b0f18; color: #e8ecf4;
+    border: 1px solid #2a3550; border-radius: 10px; padding: 11px 12px;
+    font: inherit; font-size: 15px; color-scheme: dark;
+  }
+  .field .count { text-align: right; font-size: 12px; color: #9aa6bd; margin-top: 4px; }
+  .when { background: #1a2338; border-radius: 10px; padding: 12px 14px; font-weight: 600; font-size: 15px; margin-bottom: 18px; }
   .sub { margin-top: 16px; font-size: 13px; }
   .sub a { color: #7aa2ff; text-decoration: none; }
   .hide { display: none !important; }
@@ -168,8 +178,22 @@
          the button is pressed, so a mail scanner following the link does nothing. -->
     <div id="decline" class="hide">
       <h1 id="declineTitle">Can&rsquo;t make it?</h1>
-      <p id="declineText">Decline this live interview invitation. The person who invited you will be told.</p>
-      <a class="cta" id="declineBtn" href="#" role="button">Decline the invitation</a>
+      <p id="declineText">One moment&hellip;</p>
+      <!-- Both fields are optional (design v1.5.9, 4c.18). -->
+      <div id="declineForm" class="hide">
+        <div class="field">
+          <label for="declineNote"><span id="declineNoteLabel">Note</span><em id="declineNoteHint">Optional</em></label>
+          <textarea id="declineNote" rows="3" maxlength="300"></textarea>
+          <div class="count" id="declineCount">0 / 300</div>
+        </div>
+        <div class="field" id="declineTimeField">
+          <label for="declineTime"><span>Suggest another time</span><em>Optional</em></label>
+          <input id="declineTime" type="datetime-local" step="900">
+        </div>
+        <a class="cta" id="declineBtn" href="#" role="button">Tell them</a>
+      </div>
+      <div id="declineWhen" class="hide when"></div>
+      <p id="declineAfter" class="hide"></p>
     </div>
 
     <!-- Generic not-found (any other path) -->
@@ -241,31 +265,90 @@
       var title = document.getElementById('declineTitle');
       var text = document.getElementById('declineText');
       var btn = document.getElementById('declineBtn');
-      var sending = false;
-      function done(h, p) { title.textContent = h; text.textContent = p; btn.classList.add('hide'); }
+      var note = document.getElementById('declineNote');
+      var time = document.getElementById('declineTime');
+      var sending = false, first = 'them', when = null;
+      function post(body) {
+        body.sessionId = code; body.token = code2;
+        return fetch(DECLINE, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body)
+        }).then(function (r) { return r.json(); });
+      }
+      function closed() {
+        hide('declineForm');
+        title.textContent = 'This invitation is closed';
+        text.textContent = 'It was declined, or the interview has started, ended or been cancelled.';
+      }
+      function local(d) {  // the value a datetime-local input takes, in this browser's own zone
+        function p(n) { return String(n).padStart(2, '0'); }
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+      }
+      note.addEventListener('input', function () {
+        document.getElementById('declineCount').textContent = note.value.length + ' / 300';
+      });
+      // Asking what to show changes nothing: only the button declines.
+      post({ action: 'peek' }).then(function (r) {
+        if (r.status !== 'open') { closed(); return; }
+        first = r.first; when = r.when;
+        title.textContent = 'Tell ' + first + ' you can\u2019t make it?';
+        text.textContent = (when ? 'Your interview is on ' + when + '. ' : '') + 'We\u2019ll let ' + first + ' know.';
+        document.getElementById('declineNoteLabel').textContent = 'Note for ' + first;
+        document.getElementById('declineNoteHint').textContent = 'Optional \u00b7 only ' + first + ' sees it';
+        btn.textContent = 'Tell ' + first;
+        if (r.canSuggest) {
+          var from = new Date(Date.now() + 3600e3);
+          from.setMinutes(Math.ceil(from.getMinutes() / 15) * 15, 0, 0);
+          time.min = local(from);
+          time.max = local(new Date(Date.now() + 30 * 86400e3));
+        } else {
+          hide('declineTimeField');
+        }
+        show('declineForm');
+      }).catch(function () {
+        text.textContent = 'This page couldn\u2019t load. Check your connection and open the link again.';
+      });
       btn.addEventListener('click', function (e) {
         e.preventDefault();
         if (sending) return;
+        var body = { note: note.value.trim() };
+        if (time.value) {
+          var at = new Date(time.value);
+          if (isNaN(at.getTime()) || at.getTime() < Date.now() + 3600e3 || at.getTime() > Date.now() + 30 * 86400e3) {
+            text.textContent = 'Suggest a time at least an hour from now and within 30 days.';
+            return;
+          }
+          body.suggestedAt = at.toISOString();
+        }
         sending = true;
-        btn.textContent = 'Declining\u2026';
-        fetch(DECLINE, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ sessionId: code, token: code2 })
-        }).then(function (r) { return r.json(); }).then(function (r) {
-          if (r.status === 'declined' || r.status === 'already') {
-            done('You\u2019ve declined', 'Thanks for letting them know. You can close this page.');
-          } else if (r.status === 'closed' || r.status === 'none') {
-            done('This invitation is no longer open', 'The interview has already started, ended or been cancelled.');
+        btn.textContent = 'Sending\u2026';
+        function again(msg) { sending = false; btn.textContent = 'Tell ' + first; text.textContent = msg; }
+        post(body).then(function (r) {
+          if (r.status === 'declined') {
+            hide('declineForm');
+            // Wording approved by the PO (4c.19).
+            title.textContent = first + ' has been Notified';
+            var after = document.getElementById('declineAfter');
+            if (r.suggested) {
+              text.textContent = 'Thanks for letting ' + first + ' know you are unavailable. You suggested an alternate schedule of:';
+              document.getElementById('declineWhen').textContent = r.suggested + '.';
+              show('declineWhen');
+              after.textContent = 'If ' + first + ' moves the interview to that time, you\u2019ll get a new invitation. If not, your invitation' + (when ? ' for ' + when : '') + ' is closed.';
+            } else {
+              text.textContent = 'Thanks for letting ' + first + ' know you are unavailable.';
+              after.textContent = 'Your invitation' + (when ? ' for ' + when : '') + ' is closed.';
+            }
+            show('declineAfter');
+          } else if (r.status === 'bad_time') {
+            again('Suggest a time at least an hour from now and within 30 days.');
+          } else if (r.status === 'error') {
+            again('That didn\u2019t go through. Check your connection and try again.');
           } else {
-            sending = false;
-            btn.textContent = 'Decline the invitation';
-            text.textContent = 'That didn\u2019t go through. Check your connection and try again.';
+            closed();
           }
         }).catch(function () {
-          sending = false;
-          btn.textContent = 'Decline the invitation';
-          text.textContent = 'That didn\u2019t go through. Check your connection and try again.';
+          again('That didn\u2019t go through. Check your connection and try again.');
         });
       });
       show('decline');
