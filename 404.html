@@ -54,6 +54,34 @@
   .sub a { color: #7aa2ff; text-decoration: none; }
   .hide { display: none !important; }
 
+  /* ---- The 360° view: documents beside the pitch ---- */
+  .wrap.with-doc { max-width: 1180px; display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 24px; align-items: start; text-align: left; }
+  .wrap.with-doc #player { max-width: none; }
+  .docs-h { margin: 18px 0 8px; font-size: 13px; font-weight: 600; color: #c9d2e3; text-align: left; }
+  .doclist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  .docbtn { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; background: #141c2e; color: #e8ecf4;
+    border: 1px solid #2a3550; border-radius: 10px; padding: 11px 14px; font: inherit; font-size: 14px; cursor: pointer; text-align: left; }
+  .docbtn span { color: #9aa6bd; font-size: 12px; }
+  .docbtn.on { border-color: #e8ecf4; }
+  #docView { background: #f7f8f9; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; min-height: 72vh; }
+  .docbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; background: #fff; border-bottom: 1px solid #e2e5e9; }
+  .doctabs { display: flex; gap: 6px; overflow-x: auto; }
+  .doctab { white-space: nowrap; border: 1px solid #cbd0d6; background: #fff; color: #14181d; border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+  .doctab.on { background: #14181d; border-color: #14181d; color: #fff; }
+  .docclose { border: 0; background: none; color: #14181d; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; }
+  .docbody { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .pdftools { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px; background: #fff; border-bottom: 1px solid #e2e5e9; color: #14181d; font-size: 13px; }
+  .pdftools button { min-width: 40px; height: 34px; border: 1px solid #cbd0d6; background: #fff; color: #14181d; border-radius: 8px; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .pdftools span { min-width: 48px; text-align: center; }
+  .pdfpages { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; max-height: 78vh; background: #e9ecef; }
+  .pdfpages canvas { display: block; background: #fff; box-shadow: 0 1px 3px rgba(20,24,29,.18); max-width: none; }
+  .docbody iframe, .docbody img { width: 100%; min-height: 70vh; border: 0; object-fit: contain; background: #f7f8f9; }
+  .docbody p { margin: 24px; color: #565e69; }
+  @media (max-width: 899px) {
+    .wrap.with-doc { grid-template-columns: 1fr; }
+    #docView { min-height: 60vh; }
+  }
+
   /* ---- Public VPx web player (S9 O-8, ADD-1 §3) ---- */
   #player { max-width: 420px; }
   .stage {
@@ -67,22 +95,18 @@
   .stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   /* Everything drawn over the video ignores taps, so play/pause keeps working. */
   .overlay { position: absolute; inset: 0; pointer-events: none; }
+  /* The "Public" chip (design v1.6.0, 3a.14): it replaces the "Authorized for
+     public viewing" pill, and is the same chip the app draws. */
   .designation {
     position: absolute; top: 12px; left: 12px;
-    display: flex; align-items: center; gap: 7px;
-    padding: 6px 10px 6px 7px; border-radius: 999px;
-    background: rgba(8, 12, 20, .62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-    font-size: 12px; font-weight: 600; letter-spacing: .2px; color: #fff;
+    padding: 4px 8px; border-radius: 6px;
+    background: rgba(20, 24, 29, .72);
+    font-size: 11.5px; font-weight: 600; white-space: nowrap; color: #fff;
   }
-  .designation i {
-    width: 16px; height: 16px; border-radius: 50%; background: #0b0f18;
-    box-shadow: 0 0 0 1.5px #000; display: flex; align-items: center; justify-content: center;
-  }
-  .designation i::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #e5372c; }
   /* FR-54 as amended 9 Oct 2026, as the app draws it: the MOCVIEW wordmark at
      the top right, and nothing about the viewer. Who watched is recorded for
      the owner; it is not written over the video. */
-  .wm { position: absolute; right: 12px; top: 16px; width: 80px; height: auto; opacity: .85; }
+  .wm { position: absolute; right: 14px; top: 14px; width: 84px; height: auto; opacity: .85; }
   .playbtn {
     position: absolute; inset: 0; margin: auto; width: 72px; height: 72px;
     border-radius: 50%; background: rgba(8,12,20,.55); pointer-events: none;
@@ -111,19 +135,32 @@
                disablepictureinpicture disableremoteplayback
                controlslist="nodownload nofullscreen noremoteplayback"></video>
         <div class="overlay">
-          <div class="designation"><i></i>Authorized for public viewing</div>
+          <div class="designation">Public</div>
           <svg class="wm" role="img" aria-label="MOCVIEW" xmlns="http://www.w3.org/2000/svg" viewBox="118 268 560 76"><path fill="#FFFFFF" d="M616.17,335.3h2.93l15.49-47.22l15.49,47.22H653l15.57-58.6h-4.1l-13.31,50.48l-14.98-47.21h-3.01l-15.24,47.21&#xA;&#x9;&#x9;l-13.14-50.48h-4.19L616.17,335.3z M536.22,335.3h29.89v-4.02h-25.87v-24.7h25.11v-4.02h-25.11v-21.85h25.87v-4.02h-29.89V335.3z&#xA;&#x9;&#x9; M492.61,276.7h-4.02v58.6h4.02V276.7z M424.3,335.3h2.68l23.61-58.6h-4.44l-20.51,51.57l-20.43-51.57h-4.44L424.3,335.3z&#xA;&#x9;&#x9; M359.5,295.28l8.79-8.79c-5.52-6.53-13.98-10.63-23.69-10.63c-17.41,0-31.06,13.06-31.06,30.22c0,16.99,13.39,30.05,30.89,30.05&#xA;&#x9;&#x9;c11.05,0,20.09-5.11,25.7-12.39l-9.38-8.2c-3.27,4.86-8.96,8.46-16.24,8.46c-10.72,0-18.58-7.7-18.58-17.91&#xA;&#x9;&#x9;c0-10.38,8.04-18.08,18.67-18.08C351.05,288,356.24,290.85,359.5,295.28 M251.68,324c-10.55,0-18.42-7.7-18.42-18&#xA;&#x9;&#x9;c0-10.3,8.04-18,18.75-18c10.38,0,18.08,7.7,18.08,18C270.09,316.3,262.23,324,251.68,324 M251.68,336.14&#xA;&#x9;&#x9;c17.41,0,30.81-13.14,30.81-30.14c0-16.99-13.23-30.14-30.47-30.14c-17.5,0-31.14,13.06-31.14,30.14&#xA;&#x9;&#x9;C220.87,323.08,234.26,336.14,251.68,336.14 M169.22,276.7l-14.98,39.43l-15.07-39.43h-15.74v58.6h11.89v-41.52l13.48,36.5h10.8&#xA;&#x9;&#x9;l13.48-36.67v41.69h11.89v-58.6H169.22z"></path><path fill="#D2232A" d="M251.68,319.13c7.27,0,13.17-5.9,13.17-13.17c0-7.28-5.9-13.17-13.17-13.17c-7.28,0-13.17,5.9-13.17,13.17&#xA;&#x9;&#x9;C238.51,313.23,244.41,319.13,251.68,319.13"></path></svg>
           <div class="playbtn" id="playBtn"></div>
           <div class="bar"><div id="progress"></div></div>
         </div>
       </div>
+      <!-- The 360° view on the web (PO, 14 Oct 2026): the documents the owner
+           shows beside the pitch, opened beside it on a computer and below it
+           on a phone. A Public VPx's documents are open to anyone who can
+           watch it, as in the app. -->
+      <div id="docs" class="hide">
+        <p class="docs-h">Shown beside the pitch</p>
+        <div id="docList" class="doclist"></div>
+      </div>
       <div id="appOffer">
-        <p>See the full VPx in the MOCVIEW app, in 360° and with the documents the owner has shared.</p>
+        <p id="appOfferText">See the full VPx in the MOCVIEW app, in 360° and with the documents the owner has shared.</p>
         <a class="cta hide" id="playerOpenBtn" href="#">Open in the MOCVIEW app</a>
         <p class="sub" id="playerGet">Don&rsquo;t have the app yet?
            <a href="https://apps.apple.com/app/mocview">Get MOCVIEW</a>
         </p>
       </div>
+    </div>
+
+    <div id="docView" class="hide">
+      <div class="docbar"><div id="docTabs" class="doctabs"></div><button type="button" id="docClose" class="docclose">Close</button></div>
+      <div id="docBody" class="docbody"></div>
     </div>
 
     <!-- Any /v/ link that is not a live, Public VPx: one neutral page for all -->
@@ -166,9 +203,10 @@
       <h1>You&rsquo;re invited to a live interview</h1>
       <p id="liveText">It opens in the MOCVIEW app.</p>
       <a class="cta" id="liveBtn" href="#">Open in the MOCVIEW app</a>
-      <!-- On a computer: the interview runs in the app on an iPhone, so the
-           page hands the invitation to the phone instead of offering a button
-           that cannot work here. -->
+      <!-- An interviewer can also take part in a browser, with no app (the
+           evaluator web, PO 12 Oct). On a computer that is the button; the
+           code below still hands the invitation to an iPhone that has the app. -->
+      <p style="margin-top:14px"><a id="liveWeb" href="#" style="color:inherit;font-weight:600">Continue in your browser</a></p>
       <div id="liveQr" class="hide" style="margin:20px auto 0;padding:12px;background:#fff;border-radius:12px;width:192px;height:192px"></div>
     </div>
 
@@ -288,15 +326,35 @@
       note.addEventListener('input', function () {
         document.getElementById('declineCount').textContent = note.value.length + ' / 300';
       });
+      // A time on this page (design v1.7.0, Turn 24): in the browser's own time
+      // zone when it gives one, as "Tue 14 Oct at 6:00 PM EDT". If it doesn't,
+      // the server's wording in the candidate's zone, which says whose it is.
+      function localWhen(iso, fallback) {
+        try {
+          var zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          var d = new Date(iso);
+          if (iso && zone && !isNaN(d.getTime())) {
+            var parts = new Intl.DateTimeFormat('en-US', {
+              weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+              hour12: true, timeZoneName: 'short'
+            }).formatToParts(d);
+            var p = function (t) { for (var i = 0; i < parts.length; i++) if (parts[i].type === t) return parts[i].value; return ''; };
+            return p('weekday') + ' ' + p('day') + ' ' + p('month') + ' at ' + p('hour') + ':' + p('minute') + ' ' + p('dayPeriod') + ' ' + p('timeZoneName');
+          }
+        } catch (e) { /* the candidate's time, below */ }
+        return fallback ? fallback + ' (' + first + '\u2019s time)' : fallback;
+      }
+      function tell() { return 'Tell ' + first + ' you can\u2019t make it'; }
       // Asking what to show changes nothing: only the button declines.
       post({ action: 'peek' }).then(function (r) {
         if (r.status !== 'open') { closed(); return; }
-        first = r.first; when = r.when;
-        title.textContent = 'Tell ' + first + ' you can\u2019t make it?';
-        text.textContent = (when ? 'Your interview is on ' + when + '. ' : '') + 'We\u2019ll let ' + first + ' know.';
+        first = r.first; when = localWhen(r.at, r.when);
+        // 4c.18 as drawn (rev. 2); the button wording is the PO's of 10 Oct.
+        title.textContent = 'Can\u2019t make it?';
+        text.textContent = first + ' invited you to interview them' + (when ? ' on ' + when : '') + '. Tell ' + first + ' here.';
         document.getElementById('declineNoteLabel').textContent = 'Note for ' + first;
         document.getElementById('declineNoteHint').textContent = 'Optional \u00b7 only ' + first + ' sees it';
-        btn.textContent = 'Tell ' + first;
+        btn.textContent = tell();
         if (r.canSuggest) {
           var from = new Date(Date.now() + 3600e3);
           from.setMinutes(Math.ceil(from.getMinutes() / 15) * 15, 0, 0);
@@ -323,16 +381,16 @@
         }
         sending = true;
         btn.textContent = 'Sending\u2026';
-        function again(msg) { sending = false; btn.textContent = 'Tell ' + first; text.textContent = msg; }
+        function again(msg) { sending = false; btn.textContent = tell(); text.textContent = msg; }
         post(body).then(function (r) {
           if (r.status === 'declined') {
             hide('declineForm');
-            // Wording approved by the PO (4c.19).
-            title.textContent = first + ' has been Notified';
+            // Wording approved by the PO (4c.19; lowercase n, 10 Oct).
+            title.textContent = first + ' has been notified';
             var after = document.getElementById('declineAfter');
             if (r.suggested) {
               text.textContent = 'Thanks for letting ' + first + ' know you are unavailable. You suggested an alternate schedule of:';
-              document.getElementById('declineWhen').textContent = r.suggested + '.';
+              document.getElementById('declineWhen').textContent = localWhen(r.suggestedAt, r.suggested) + '.';
               show('declineWhen');
               after.textContent = 'If ' + first + ' moves the interview to that time, you\u2019ll get a new invitation. If not, your invitation' + (when ? ' for ' + when : '') + ' is closed.';
             } else {
@@ -358,10 +416,15 @@
     if (route.kind === 'live') {
       var liveUrl = 'mocview://live/' + code;
       document.getElementById('liveBtn').setAttribute('href', liveUrl);
+      document.getElementById('liveWeb').setAttribute('href', '/web/#/interview/' + code);
       show('live');
       if (isIOS || isAndroid) { tryApp(liveUrl); return; }
       document.getElementById('liveText').textContent =
-        'Live interviews run in the MOCVIEW app on iPhone. Point your iPhone camera at this code to open your invitation there.';
+        'Interviewers can join in this browser. To use the MOCVIEW app instead, point your iPhone camera at this code.';
+      // On a computer the browser is the way in: it takes the button's place.
+      var web = document.getElementById('liveWeb');
+      web.className = 'cta'; web.removeAttribute('style');
+      web.parentNode.style.marginTop = '0';
       hide('liveBtn');
       var lib = document.createElement('script');
       lib.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
@@ -430,6 +493,7 @@
       document.getElementById('topMark').classList.add('hide');
       if (d.thumbnailUrl) video.setAttribute('poster', d.thumbnailUrl);
       video.src = d.videoUrl;
+      showDocs(d.documents || []);
       // The app is offered, never required. There is no Android app yet, so
       // Android is offered nothing rather than an iPhone store link.
       if (isAndroid) hide('appOffer');
@@ -440,6 +504,113 @@
       }
       show('player');
     }
+
+    var docs = [], openId = null;
+    function kindWord(k) { return k === 'image' ? 'Image' : k === 'pdf' ? 'PDF' : 'Document'; }
+    function showDocs(list) {
+      docs = list;
+      if (!docs.length) return;
+      var box = document.getElementById('docList'); box.innerHTML = '';
+      docs.forEach(function (doc) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'docbtn'; b.dataset.id = doc.id;
+        var n = document.createElement('b'); n.textContent = doc.fileName;
+        var k = document.createElement('span'); k.textContent = kindWord(doc.kind) + ' \u00b7 Open';
+        b.appendChild(n); b.appendChild(k);
+        b.addEventListener('click', function () { openDoc(doc.id); });
+        box.appendChild(b);
+      });
+      document.getElementById('appOfferText').textContent = 'It plays in the MOCVIEW app on iPhone too.';
+      show('docs');
+    }
+    function openDoc(id) {
+      var doc = docs.filter(function (x) { return x.id === id; })[0]; if (!doc) return;
+
+      openId = id;
+      var tabs = document.getElementById('docTabs'); tabs.innerHTML = '';
+      docs.forEach(function (x) {
+        var t = document.createElement('button'); t.type = 'button'; t.className = 'doctab' + (x.id === id ? ' on' : '');
+        t.textContent = x.fileName; t.addEventListener('click', function () { openDoc(x.id); }); tabs.appendChild(t);
+      });
+      [].forEach.call(document.querySelectorAll('.docbtn'), function (b) { b.classList.toggle('on', b.dataset.id === id); });
+      var body = document.getElementById('docBody'); body.innerHTML = '<p>Opening\u2026</p>';
+      document.querySelector('.wrap').classList.add('with-doc'); show('docView');
+      fetch(FN, { method: 'POST', headers: { 'content-type': 'application/json' }, cache: 'no-store',
+                  body: JSON.stringify({ code: code, documentId: id }) })
+        .then(function (r) { return r.ok ? r.json() : {}; })
+        .then(function (r) {
+          if (openId !== id) return;
+          body.innerHTML = '';
+          if (!r.url) { body.innerHTML = '<p>This document can\u2019t be opened right now.</p>'; return; }
+          if (doc.kind === 'image') {
+            var img = document.createElement('img'); img.alt = doc.fileName; img.src = r.url; body.appendChild(img);
+          } else {
+            renderPdf(id, body);
+          }
+          if (window.innerWidth < 900) document.getElementById('docView').scrollIntoView({ behavior: 'smooth' });
+        }, function () { body.innerHTML = '<p>This document can\u2019t be opened right now.</p>'; });
+    }
+    // A PDF drawn as pages, the width of the viewer (PO, 14 Oct: a phone showed
+    // a frozen corner of page one, or nothing in portrait). Zoom with − and +;
+    // the pages scroll inside the viewer. Nothing to download or print here.
+    var PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+    var pdfLib = null;
+    function loadPdfLib() {
+      if (pdfLib) return pdfLib;
+      pdfLib = new Promise(function (ok, fail) {
+        var sc = document.createElement('script');
+        sc.src = PDFJS + 'pdf.min.js';
+        sc.integrity = 'sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e'; sc.crossOrigin = 'anonymous';
+        sc.onload = function () { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; ok(window.pdfjsLib); };
+        sc.onerror = function () { pdfLib = null; fail(); };
+        document.head.appendChild(sc);
+      });
+      return pdfLib;
+    }
+    function renderPdf(id, body) {
+      body.innerHTML = '<p>Opening\u2026</p>';
+      var zoom = 1, pdf = null;
+      var tools = document.createElement('div'); tools.className = 'pdftools';
+      var pages = document.createElement('div'); pages.className = 'pdfpages';
+      function btn(label, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.addEventListener('click', fn); tools.appendChild(b); return b; }
+      var out = btn('\u2212', function () { zoom = Math.max(0.6, zoom - 0.25); draw(); });
+      var pct = document.createElement('span'); tools.appendChild(pct);
+      var inn = btn('+', function () { zoom = Math.min(3, zoom + 0.25); draw(); });
+      btn('Fit', function () { zoom = 1; draw(); });
+      function draw() {
+        if (!pdf || openId !== id) return;
+        pct.textContent = Math.round(zoom * 100) + '%';
+        var width = Math.max(240, pages.clientWidth - 16);
+        var ratio = window.devicePixelRatio || 1;
+        pages.innerHTML = '';
+        var n = 0;
+        (function next() {
+          if (openId !== id || ++n > pdf.numPages) return;
+          pdf.getPage(n).then(function (page) {
+            var base = page.getViewport({ scale: 1 });
+            var scale = (width / base.width) * zoom;
+            var vp = page.getViewport({ scale: scale * ratio });
+            var c = document.createElement('canvas');
+            c.width = vp.width; c.height = vp.height;
+            c.style.width = Math.floor(vp.width / ratio) + 'px'; c.style.height = Math.floor(vp.height / ratio) + 'px';
+            pages.appendChild(c);
+            page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(next, next);
+          }, next);
+        })();
+      }
+      var bytes = fetch(FN, { method: 'POST', headers: { 'content-type': 'application/json' }, cache: 'no-store',
+                              body: JSON.stringify({ code: code, documentId: id, bytes: true }) })
+        .then(function (r) { if (!r.ok) throw new Error('status ' + r.status); return r.arrayBuffer(); });
+      Promise.all([loadPdfLib(), bytes]).then(function (x) { return x[0].getDocument({ data: new Uint8Array(x[1]) }).promise; })
+        .then(function (d) {
+          if (openId !== id) return;
+          pdf = d; body.innerHTML = ''; body.appendChild(tools); body.appendChild(pages); draw();
+        }, function () { body.innerHTML = '<p>This document can\u2019t be opened right now.</p>'; });
+    }
+
+    document.getElementById('docClose').addEventListener('click', function () {
+      openId = null; hide('docView'); document.querySelector('.wrap').classList.remove('with-doc');
+      [].forEach.call(document.querySelectorAll('.docbtn'), function (b) { b.classList.remove('on'); });
+    });
 
     stage.addEventListener('click', function () {
       if (video.paused || video.ended) { video.play(); } else { video.pause(); }
