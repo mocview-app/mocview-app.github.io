@@ -234,6 +234,17 @@
       <p id="declineAfter" class="hide"></p>
     </div>
 
+    <!-- Joining a career center (shown when the path is /join/<code> or
+         /join/i/<invitation>). With the app installed the link opens it; this
+         page is for a phone without it, or a computer. -->
+    <div id="join" class="hide">
+      <h1 id="joinTitle">Join on MOCVIEW</h1>
+      <p id="joinText">Open this in the MOCVIEW app to see what joining means and accept.</p>
+      <a class="cta" id="joinBtn" href="#">Open in the MOCVIEW app</a>
+      <p class="sub">The MOCVIEW app is coming soon.
+         <a href="https://mocview.com/#waitlist">Join the waitlist</a></p>
+    </div>
+
     <!-- Generic not-found (any other path) -->
     <div id="nf" class="hide">
       <h1>Page Not Found</h1>
@@ -280,6 +291,8 @@
       { re: /^\/i\/([A-Za-z0-9_-]+)$/, kind: 'invite' },
       { re: /^\/(feedback)$/, kind: 'feedback' },
       { re: /^\/live\/([A-Za-z0-9-]+)$/, kind: 'live' },
+      { re: /^\/join\/i\/([0-9a-f]{64})$/, kind: 'join-invite' },
+      { re: /^\/join\/([A-Za-z0-9-]{6,12})$/, kind: 'join-code' },
       { re: /^\/decline\/([0-9a-fA-F-]{36})\/([0-9a-fA-F]{64})$/, kind: 'decline' }
     ];
     var path = location.pathname.replace(/\/+$/, '');
@@ -439,6 +452,20 @@
         show('liveQr');
       };
       document.head.appendChild(lib);
+      return;
+    }
+
+    if (route.kind === 'join-invite' || route.kind === 'join-code') {
+      var joinUrl = route.kind === 'join-invite' ? 'mocview://join/i/' + code : 'mocview://join/' + code;
+      document.getElementById('joinBtn').setAttribute('href', joinUrl);
+      if (route.kind === 'join-invite') {
+        document.getElementById('joinTitle').textContent = 'Open your invitation';
+      } else {
+        document.getElementById('joinText').textContent =
+          'Open the MOCVIEW app and enter the code ' + code.toUpperCase() + ', or open this link on your phone.';
+      }
+      show('join');
+      if (isIOS || isAndroid) tryApp(joinUrl);
       return;
     }
 

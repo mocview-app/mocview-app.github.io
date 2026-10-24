@@ -7,7 +7,8 @@
           { "/": "/v/*", "comment": "VPx share links open directly in the app" },
           { "/": "/i/*", "comment": "Per-person view invitations (access model 2a) open directly in the app" },
           { "/": "/feedback", "comment": "A request to review opens Feedback to give in the app" },
-          { "/": "/live/*", "comment": "An invitation to a Live interview opens that interview in the app" }
+          { "/": "/live/*", "comment": "An invitation to a Live interview opens that interview in the app" },
+          { "/": "/join/*", "comment": "A career center's join code (QR) or invitation opens Join in the app" }
         ]
       }
     ]
